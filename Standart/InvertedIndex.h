@@ -78,6 +78,8 @@ public:
     void Read(std::ifstream&);
     DynamicBitSet Get( const std::string& );
 
+    inline size_t Size() { return _indexes.size();  } 
+
 private:
     std::unordered_map<std::string, CInvertedIndexElement> _indexes;
 };

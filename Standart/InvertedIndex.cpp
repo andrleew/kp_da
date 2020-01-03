@@ -154,6 +154,19 @@ CInvertedIndexElement::Insert(uint value)
 void 
 CInvertedIndexElement::Encode()
 {
+    uint value = eTypeToeBin_Type(_type), i = 0;
+
+    while (!_tmpValues.empty()){
+        value <<= _type;
+        value |= _tmpValues.front();
+        _tmpValues.pop_front();
+        ++i;
+    }
+    value <<= (TypeContain(_type) - i) * _type;
+    value <<= TypeExtraBits(_type);
+    _encoded.push_back(value);
+    
+    /*
     uint value = eTypeToeBin_Type(_type),
         contain = TypeContain(_type),
         i;
@@ -175,7 +188,7 @@ CInvertedIndexElement::Encode()
     value <<= ((contain - i) * _type);
     value <<= TypeExtraBits(_type);
     _encoded.push_back(value);
-    if (_tmpValues.empty()) _type = 0;
+    if (_tmpValues.empty()) _type = 0;*/
 }
 
 std::pair<DynamicBitSet, uint32_t>
@@ -215,8 +228,9 @@ CInvertedIndexElement::Write(std::ofstream & ofs){
 
 void
 CInvertedIndexElement::Read(std::ifstream & ifs){
-    size_t count;
+    uint count;
     ifs >> count;
+    ifs.ignore();
     _encoded.resize(count);
     ifs.read((char*)_encoded.data(), count * sizeof(uint));
 }
@@ -233,6 +247,7 @@ void
 CInvertedIndex::Read(std::ifstream& ifs){
     std::string word;
     while (ifs >> word){
+        // std::cout << word << std::endl;
         auto it = _indexes.insert(std::make_pair(word, CInvertedIndexElement())).first->second;
         it.Read(ifs);
     }

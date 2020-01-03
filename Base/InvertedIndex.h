@@ -4,8 +4,10 @@
 #include <iostream>
 #include <unordered_map>
 #include <list>
-#include <queue>
+#include <fstream>
 #include <algorithm>
+
+#include "DynamicBitSet.h"
 
 //1 2 3 4 5 7 9 14 28
 
@@ -54,13 +56,15 @@ public:
     void Print();
     void Insert( uint );
     void EncodeAll();
-    std::vector< uint > Get();
+    void Write(std::ofstream&);
+    void Read(std::ifstream&);
+    DynamicBitSet Get();
 private:
     void Encode();
-    std::vector<uint> Decode();
+    std::pair<DynamicBitSet, uint32_t> Decode();
 
     std::vector<uint> _encoded;
-    std::queue<uint> _tmpValues;
+    std::list<uint> _tmpValues;
     uint _type, _lastValue;
 };
 
@@ -70,7 +74,9 @@ public:
     void Print();
     void Insert(const std::string&, uint);
     void EncodeAll();
-    std::vector< uint > Get( const std::string& );
+    void Write(std::ofstream&);
+    void Read(std::ifstream&);
+    DynamicBitSet Get( const std::string& );
 
 private:
     std::unordered_map<std::string, CInvertedIndexElement> _indexes;

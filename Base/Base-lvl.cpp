@@ -4,6 +4,7 @@
 #include <map>
 
 #include "InvertedIndex.h"
+#include "DynamicBitSet.h"
 
 // #define DEBUG
 #define RELEASE
@@ -23,23 +24,7 @@ void ToLower(string & str){
     transform(str.begin()
             , str.end()
             , str.begin()
-            , [](char c) -> char
-                { return (isalnum(c) ? tolower(c) : ' ');});
-}
-
-void GenerateMap(map<size_t, size_t>* m, const vector<string> & words, CInvertedIndex & cii){
-    m->clear();
-    auto textNumbers = cii.Get(words[0]);
-    for (auto text : textNumbers){
-        m->insert(make_pair(text, 1));
-    }
-    for (size_t i = 1; i < words.size(); ++i){
-        textNumbers = cii.Get(words[i]);
-        for (auto text : textNumbers){
-            auto it = m->find(text);
-            if (it != m->end()) ++it->second;
-        }
-    }
+            , [](char c) { return tolower(c);});
 }
 
 vector<string> ParceToWords(const string & str){
@@ -52,17 +37,16 @@ vector<string> ParceToWords(const string & str){
     return words;
 }
 
-vector <uint> MakeResultVector (const map<size_t, size_t> & m, size_t count){
-    vector <uint> result;
-    for (auto text : m){
-        if (text.second == count) result.push_back(text.first);
-    }
-    return result;
+vector <uint> MakeResultVector (CInvertedIndex& cii, vector<string> words){
+    DynamicBitSet dbs = cii.Get(words[0]);
+    for (size_t i = 1; i < words.size(); ++i) dbs &= cii.Get(words[i]);
+    return dbs.ToVector();
 }
 
 size_t CountSum(vector <uint> & textIndexes){
     size_t sum = 0;
     for (size_t i = 0; i < textIndexes.size(); ++i){
+        // std::cout << textIndexes[i] << endl;
         sum += textIndexes[i] * i;
         sum %= MOD;
     }
@@ -98,8 +82,7 @@ int main()
         getline(cin, str);
         ToLower(str);
         words = ParceToWords(str);
-        GenerateMap(&texts_count, words, ii);
-        l = MakeResultVector(texts_count, words.size());
+        l = MakeResultVector(ii, words);
         cout << l.size() << " " << CountSum(l) << "\n";
     }
 

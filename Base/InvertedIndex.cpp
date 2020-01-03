@@ -23,11 +23,11 @@ CInvertedIndex::EncodeAll()
     for (auto el : _indexes) el.second.EncodeAll();
 }
 
-std::vector< uint >
+DynamicBitSet
 CInvertedIndex::Get(const std::string& word)
 {
     auto it = _indexes.find(word);
-    if (it == _indexes.end()) return std::vector< uint >();
+    if (it == _indexes.end()) return std::move(DynamicBitSet());
     else return it->second.Get();
 }
 
@@ -37,20 +37,17 @@ CInvertedIndexElement::CInvertedIndexElement()
 
 CInvertedIndexElement::~CInvertedIndexElement(){}
 
-std::vector< uint >
+DynamicBitSet
 CInvertedIndexElement::Get()
 {
-    std::vector<uint> l = Decode();
-    uint val = (l.size() ? (*l.end()) : 0), last = 0;
-    for (size_t i = 0; i < _tmpValues.size(); ++i)
-    {
-        last = val;
-        val += _tmpValues.front();
-        l.push_back(val);
-        _tmpValues.pop();
-        _tmpValues.push(val - last);
+    auto p = Decode();
+
+    uint32_t val = p.second;
+    for (auto el : _tmpValues){
+        val += el;
+        p.first.Set(val);
     }
-    return l;
+    return p.first;
 }
 
 void
@@ -149,7 +146,7 @@ CInvertedIndexElement::Insert(uint value)
         if (contain < _tmpValues.size() + 1) Encode();
         _type = tmpType;
     }
-    _tmpValues.push(tmp);
+    _tmpValues.push_back(tmp);
     if (static_cast<size_t>(TypeContain(_type)) == _tmpValues.size()) Encode();
     _lastValue = value;
 }
@@ -166,7 +163,7 @@ CInvertedIndexElement::Encode()
     {
         value <<= _type;
         value |= topValue;
-        _tmpValues.pop();
+        _tmpValues.pop_front();
         if (!_tmpValues.empty()) topValue = _tmpValues.front();
         else
         {
@@ -181,12 +178,12 @@ CInvertedIndexElement::Encode()
     if (_tmpValues.empty()) _type = 0;
 }
 
-std::vector<uint>
+std::pair<DynamicBitSet, uint32_t>
 CInvertedIndexElement::Decode()
 {
+    DynamicBitSet result(_lastValue + 1);
     uint type, value, contain, lastValue = 0,
     leftMove, rightMove;
-    std::vector <uint> result;
     for (uint el : _encoded)
     {
         type = eBin_TypeToeType(el >> 28);
@@ -201,27 +198,44 @@ CInvertedIndexElement::Decode()
             
             if (value)
             {
-                result.push_back(lastValue + value);
+                result.Set(lastValue + value);
                 lastValue += value;
             } else break;
         }
-        // for (count = 0; count != contain; ++count)
-        // {
-        //     value = el % (1 << type);
-        //     el >>= type;
-        //     array[(contain - count) - 1] = value;
-        // }
-        // for (uint i = 0; i < contain; ++i)
-        // {
-        //     if (array[i] != 0)
-        //     {
-        //         value = lastValue + array[i];
-        //         result.push_back(value);
-        //         lastValue = value;
-        //     }
-        // }
     }
-    return result;
+    return std::make_pair(result, lastValue);
+}
+
+void
+CInvertedIndexElement::Write(std::ofstream & ofs){
+    EncodeAll();
+    ofs << _encoded.size() << " ";
+    ofs.write((char*)_encoded.data(), _encoded.size() * sizeof(uint));
+}
+
+void
+CInvertedIndexElement::Read(std::ifstream & ifs){
+    size_t count;
+    ifs >> count;
+    _encoded.resize(count);
+    ifs.read((char*)_encoded.data(), count * sizeof(uint));
+}
+
+void
+CInvertedIndex::Write(std::ofstream& ofs){
+    for (auto el : _indexes) {
+        ofs << el.first << " ";
+        el.second.Write(ofs);
+    }
+}
+
+void
+CInvertedIndex::Read(std::ifstream& ifs){
+    std::string word;
+    while (ifs >> word){
+        auto it = _indexes.insert(std::make_pair(word, CInvertedIndexElement())).first->second;
+        it.Read(ifs);
+    }
 }
 
 std::string ToBin(uint v)

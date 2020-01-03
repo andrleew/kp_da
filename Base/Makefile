@@ -6,14 +6,15 @@ DEBUG=$(CXX) $(WARNINGS) -g
 PROFILE=$(FLAGS) -pg
 OBJ_FILE=-c
 
-all: Base.o InvertedIndex.o Makefile
-	$(FLAGS) Base.o InvertedIndex.o -o Base
+all: Base.o InvertedIndex.o DynamicBitSet.o Makefile
+	$(FLAGS) Base.o InvertedIndex.o DynamicBitSet.o -o Base
 
-Base.o:Base-lvl.cpp InvertedIndex.h Makefile
+Base.o:Base-lvl.cpp InvertedIndex.h Makefile DynamicBitSet.h
 	$(FLAGS) $(OBJ_FILE) Base-lvl.cpp -o Base.o
-
-InvertedIndex.o: InvertedIndex.cpp InvertedIndex.h Makefile
-	$(FLAGS) $(OBJ_FILE) InvertedIndex.cpp -o InvertedIndex.o
+InvertedIndex.o: InvertedIndex.cpp InvertedIndex.h Makefile DynamicBitSet.h
+	$(FLAGS) $(OBJ_FILE) InvertedIndex.cpp
+DynamicBitSet.o: DynamicBitSet.cpp DynamicBitSet.h
+	$(FLAGS) $(OBJ_FILE) DynamicBitSet.cpp
 
 
 
