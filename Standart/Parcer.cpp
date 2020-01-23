@@ -1,5 +1,7 @@
 #include "Parcer.h"
 
+#include <algorithm>
+
 inline 
 void ToLower(std::string & s){
     transform(s.begin(),
@@ -12,13 +14,15 @@ void ToLower(std::string & s){
 }
 
 std::string ReadTitle(std::istream& is){
-    std::string title;
-    std::smatch smtitle;
+    std::string title, res;
     do{
         if (!getline(is, title)) return "";
     }while (title[0] != '<');
-    regex_search(title, smtitle, std::regex("\\btitle=\"(.*)\">"));
-    return smtitle[1];
+    for (size_t i = title.size() - 3; i > 0 && title[i] != '\"'; --i){
+        res += title[i];
+    }
+    std::reverse(res.begin(), res.end());
+    return res;
 }
 
 std::string ReadArticle(std::istream& is){
@@ -33,11 +37,13 @@ std::string ReadArticle(std::istream& is){
 
 std::vector <std::string> Split(const std::string & str){
     std::stringstream ss (str);
-    std::istream_iterator<std::string> begin(ss);
-    return std::vector<std::string>(begin, std::istream_iterator<std::string>());
+    std::vector <std::string> res;
+    std::string word;
+    while (ss >> word) res.push_back(word);
+    return res;
 }
 
-void Parsing(std::vector<std::string>& titles, CInvertedIndex& ii, std::istream& is){
+void Parsing(std::vector<std::string>& titles, InvertedIndex& ii, std::istream& is){
     std::string title, word;
     std::stringstream ss;
     uint count = 1;

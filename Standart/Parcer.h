@@ -3,7 +3,6 @@
 
 #include <iostream>
 #include <vector>
-#include <regex>
 #include <sstream>
 #include <iterator>
 
@@ -13,6 +12,6 @@ std::string ReadTitle(std::istream &);
 std::string ReadArticle(std::istream &);
 std::vector <std::string> Split(const std::string&);
 
-void Parsing(std::vector <std::string>&, CInvertedIndex &, std::istream &);
+void Parsing(std::vector <std::string>&, InvertedIndex &, std::istream &);
 
 #endif // !PARCER_H

@@ -1,87 +1,66 @@
 #ifndef INVERTED_INDEX_H
 #define INVERTED_INDEX_H
 
-#include <iostream>
-#include <unordered_map>
-#include <list>
-#include <fstream>
-#include <algorithm>
-
+#include "BaseInvertedIndex.h"
+#include "SaveQueue.h"
 #include "DynamicBitSet.h"
+#include "Worker.h"
+#include "SaveCounter.h"
 
-//1 2 3 4 5 7 9 14 28
+#include <array>
+#include <thread>
+#include <chrono>
+#include <tuple>
+#include <fstream>
+#include <unordered_map>
+#include <vector>
 
-enum
-{
-    TYPE_A = 1,
-    TYPE_B = 2,
-    TYPE_C = 3,
-    TYPE_D = 4,
-    TYPE_E = 5,
-    TYPE_F = 7,
-    TYPE_G = 9,
-    TYPE_H = 14,
-    TYPE_I = 28,
-};
-
-enum
-{
-    BIN_TYPE_A,
-    BIN_TYPE_B,
-    BIN_TYPE_C,
-    BIN_TYPE_D,
-    BIN_TYPE_E,
-    BIN_TYPE_F,
-    BIN_TYPE_G,
-    BIN_TYPE_H,
-    BIN_TYPE_I,
-};
-
-std::string ToBin(uint);
-int Type( int );
-int GetType( uint );
-int TypeContain( int );
-int TypeExtraBits( int );
-int eTypeToeBin_Type( int );
-int eBin_TypeToeType( int );
-bool CanAdd( uint , int);
-
-
-class CInvertedIndexElement
-{
+class IndexWorker : public Worker{
 public:
-    CInvertedIndexElement();
-    ~CInvertedIndexElement();
+    enum eCommand{
+        add, get
+    };
 
-    void Print();
-    void Insert( uint );
-    void EncodeAll();
+    void Add(const size_t, const uint);
+    void Get(const size_t);
+    std::vector <std::pair<size_t, DynamicBitSet>>&& FinalGet();
     void Write(std::ofstream&);
     void Read(std::ifstream&);
-    DynamicBitSet Get();
-private:
-    void Encode();
-    std::pair<DynamicBitSet, uint32_t> Decode();
+    inline size_t Size() { return baseii.Size(); }
+    inline size_t GetCount() { return getCount; }
 
-    std::vector<uint> _encoded;
-    std::list<uint> _tmpValues;
-    uint _type, _lastValue;
+private:
+    void Main();
+    bool CaseWorking() const;
+
+    BaseInvertedIndex baseii;
+    SaveQueue <std::tuple<size_t, uint, eCommand>> commands;
+    std::vector <std::pair<size_t, DynamicBitSet>> answers;
+    SaveCounter getCount;
 };
 
-class CInvertedIndex
-{
+class InvertedIndex{
 public:
-    void Print();
-    void Insert(const std::string&, uint);
-    void EncodeAll();
-    void Write(std::ofstream&);
-    void Read(std::ifstream&);
-    DynamicBitSet Get( const std::string& );
+    InvertedIndex();
+    ~InvertedIndex();
 
-    inline size_t Size() { return _indexes.size();  } 
+    void Insert (const std::string&, const uint);
+    void RunGet (const std::string&);
+    void Write (const std::string& fileName);
+    void Read (const std::string& fileName);
+    std::unordered_map <std::string, DynamicBitSet> GetAll();
+    size_t Size();
 
 private:
-    std::unordered_map<std::string, CInvertedIndexElement> _indexes;
+    static const int WORKERS_COUNT = 8;
+
+    void RunWorkers();
+    void StopWorkers();
+
+    bool isWorkersRun;
+    std::unordered_map <size_t, std::string> getting_strings;
+    std::hash <std::string> string_hash;
+    std::array<IndexWorker, WORKERS_COUNT> workers;
 };
 
-#endif
+#endif // !INVERTED_INDEX_H
