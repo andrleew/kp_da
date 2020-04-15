@@ -3,6 +3,7 @@
 
 #include <bits/stdc++.h>
 #include <cmath>
+#include <vector>
 
 
 const uint32_t ONES32 = 0xffffffff;
@@ -15,15 +16,21 @@ public:
     DynamicBitSet(size_t size = 1);
     ~DynamicBitSet();
 
-    // void Set(size_t index);
-
     inline void
     Set(size_t index)
-    { _array[_DivChunk(index)] |= static_cast<uint32_t>( 1 ) << _ModChunk(index); }
+    {   if ((_array[_DivChunk(index)] & static_cast<uint32_t>( 1 ) << _ModChunk(index)) == 0){
+            _array[_DivChunk(index)] |= static_cast<uint32_t>( 1 ) << _ModChunk(index);
+            ++_count;
+    }}
 
     inline void
     Reset(size_t index)
-    { _array[_DivChunk(index)] &= ONES32 ^ ( static_cast<uint32_t>( 1 ) << _ModChunk(index)); }
+    { 
+        if ((_array[_DivChunk(index)] & static_cast<uint32_t>( 1 ) << _ModChunk(index)) != 0){
+            _array[_DivChunk(index)] &= ONES32 ^ ( static_cast<uint32_t>( 1 ) << _ModChunk(index)); 
+            --_count;
+        }
+    }
 
     inline bool
     Get(size_t index)
@@ -31,6 +38,11 @@ public:
 
     inline size_t Size()
     { return _bitLength;}
+
+    inline size_t Count()
+    { return _count; }
+
+    std::vector<uint32_t> ToVector();
 
     void Not(size_t maxSize);
 
@@ -40,17 +52,17 @@ public:
     DynamicBitSet& operator=(const DynamicBitSet& rhs);
 
 private:
-    size_t _DivChunk(size_t num)
-    { return num >> ( _ChunkPow() ); }
-    size_t _ModChunk(size_t num)
+    inline size_t _DivChunk(size_t num)
+    { return num >> ( _ChunkPow() + 1); }
+    inline size_t _ModChunk(size_t num)
     { return num % ( _ChunkLength() ); }
-    int _ChunkPow(){
-        return sizeof (uint32_t) + 1;
-    }
-    int _ChunkLength()
-    { return (1 << _ChunkPow()); }
+    inline size_t _ChunkPow()
+    { return sizeof (uint32_t); }
+    inline size_t _ChunkLength()
+    { return (_ChunkPow() << 3); }
+    size_t _BitCount(uint);
 
-    uint32_t *_array, _size, _bitLength;
+    uint32_t *_array, _size, _bitLength, _count;
 };
 
 

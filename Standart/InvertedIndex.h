@@ -17,9 +17,7 @@
 
 class IndexWorker : public Worker{
 public:
-    enum eCommand{
-        add, get
-    };
+    IndexWorker();
 
     void Add(const size_t, const uint);
     void Get(const size_t);
@@ -30,6 +28,9 @@ public:
     inline size_t GetCount() { return getCount; }
 
 private:
+    enum eCommand{
+        add, get
+    };
     void Main();
     bool CaseWorking() const;
 

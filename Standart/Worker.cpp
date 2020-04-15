@@ -15,7 +15,8 @@ void Worker::Run(){
 void Worker::Stop(){
     if (!isRunning) return;
     isRunning = false;
-    workerThread.join();
+    if (workerThread.joinable())
+        workerThread.join();
 }
 
 void Worker::SubMain(){

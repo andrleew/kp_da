@@ -1,5 +1,9 @@
 #include "InvertedIndex.h"
 
+IndexWorker::IndexWorker()
+: getCount(0)
+{}
+
 void
 IndexWorker::Add(const size_t hash, const uint value){
     commands.Push(std::make_tuple(hash, value, eCommand::add));
@@ -13,7 +17,10 @@ IndexWorker::Get(const size_t hash) {
 
 std::vector <std::pair<std::size_t, DynamicBitSet>>&&
 IndexWorker::FinalGet() {
-    while (getCount != 0) std::this_thread::sleep_for(std::chrono::microseconds(20));
+    while (getCount != 0){
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
+        std::cout << "waiting count" << std::endl;
+    }
     return std::move(answers);
 }
 
@@ -34,6 +41,7 @@ IndexWorker::Main(){
             break;
         case eCommand::get:
             getCount -= 1;
+            std::cout << "minus count" << std::endl;
             answers.push_back({std::get<0>(p), baseii.Get(std::get<0> (p))});
             break;
         }
@@ -83,7 +91,7 @@ void
 InvertedIndex::RunGet (const std::string& str) {
     size_t h = string_hash(str);
     if (getting_strings.insert( {h, str} ).second){
-        workers[h & WORKERS_COUNT].Get(h);
+        workers[h % WORKERS_COUNT].Get(h);
     }
 }
 
@@ -91,7 +99,7 @@ std::unordered_map<std::string, DynamicBitSet>
 InvertedIndex::GetAll() {
     std::unordered_map <std::string, DynamicBitSet> m;
     for (auto& worker : workers) {
-        for (auto& p : worker.FinalGet()) {
+        for (auto p : worker.FinalGet()) {
             m.insert({getting_strings.find(p.first)->second, p.second});
         }
     }

@@ -5,8 +5,8 @@
 
 class SaveCounter{
 public:
-    SaveCounter()
-    : count (0) {}
+    SaveCounter(const size_t _count = 0)
+    : count (_count) {}
 
     template <typename T>
     SaveCounter& operator += (const T& t) {
